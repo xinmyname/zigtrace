@@ -1,6 +1,6 @@
 import checkerboardWasmUrl from '/render.wasm?url';
-const memory = new WebAssembly.Memory({ initial: 2, maximum: 2});
 
+const memory = new WebAssembly.Memory({ initial: 2, maximum: 64});
 const canvas = document.querySelector("canvas");
 const canvasContext = canvas.getContext('2d');
 
@@ -20,6 +20,8 @@ let importObject = {
 };
 
 const resultObject = await WebAssembly.instantiateStreaming(fetch(checkerboardWasmUrl), importObject);
+
+resultObject.instance.exports.wasm_debug_info();
 
 resultObject.instance.exports.render(canvas.width, canvas.height);
 

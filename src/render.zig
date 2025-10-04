@@ -1,5 +1,7 @@
 const std = @import("std");
 
+pub const allocator = std.heap.wasm_allocator;
+
 const Imports = struct {
     extern fn consoleLog(ptr: [*]const u8, len: usize) void;
     extern fn renderLine(line: u32, ptr: [*]const u8, len: usize) void;
@@ -13,15 +15,28 @@ pub const Console = struct {
     }
 };
 
+extern var __heap_base: u8;
+
+pub export fn wasm_debug_info() void {
+    const heap_base = @intFromPtr(&__heap_base);
+    const pages = @wasmMemorySize(0); // current imported pages
+    const total = pages * 65536;
+    const free_bytes = if (total > heap_base) total - heap_base else 0;
+    Console.log("pages={} total={} heap_base={} free={}", .{ pages, total, heap_base, free_bytes });
+}
+
 export fn render(width: u32, height: u32) void {
     Console.log("Rendering {} x {} ...", .{ width, height });
 
-    // TODO: This needs to be dynamically allocated
-    var line_buf: [400 * 4]u8 = undefined;
+    const line_bytes = @as(usize, width) * 4;
+    var line_buf = allocator.alloc(u8, line_bytes) catch {
+        Console.log("Allocation failed for {} bytes", .{line_bytes});
+        return;
+    };
+    defer allocator.free(line_buf);
 
     for (0..height) |line| {
-        const line_slice = line_buf[0 .. width * 4]; // assuming RGBA
-
+        const line_slice = line_buf[0..line_bytes];
         // Iterate per pixel (not per byte) to avoid incorrect gradient & compile error.
         for (0..width) |x| {
             const offset = x * 4;
@@ -31,9 +46,8 @@ export fn render(width: u32, height: u32) void {
             line_slice[offset + 0] = r;
             line_slice[offset + 1] = g;
             line_slice[offset + 2] = b;
-            line_slice[offset + 3] = 255; // alpha
+            line_slice[offset + 3] = 255;
         }
-
         Imports.renderLine(line, line_slice.ptr, line_slice.len);
     }
 }
