@@ -4,11 +4,24 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>minimal-zig-wasm-canvas</title>
+    <title>zigtrace</title>
+    <style>
+      body {
+        background-color: #000;
+        margin: 1em;
+        padding: 0;
+      }
+      canvas {
+        image-rendering: pixelated; 
+        display: block; 
+        margin: 0 auto;
+        border: 1px solid #333;
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
-    <canvas id="checkerboard" style="image-rendering: pixelated; width: 50%;">
+    <canvas width="400" height="225">
     </canvas>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 
 // Custom plugin to watch the generated WASM file sitting in public/ so a rebuild triggers a full reload.
 function watchWasmReloadPlugin() {
-  const wasmRelPath = 'public/checkerboard.wasm';
+  const wasmRelPath = 'public/render.wasm';
   return {
     name: 'watch-wasm-reload',
     apply: 'serve', // only needed for dev
@@ -13,7 +13,7 @@ function watchWasmReloadPlugin() {
 
       let reloadTimer = null;
       watcher.on('change', (changedPath) => {
-        if (!changedPath.endsWith('checkerboard.wasm')) return;
+        if (!changedPath.endsWith('render.wasm')) return;
         // Debounce in case build writes multiple times quickly
         if (reloadTimer) clearTimeout(reloadTimer);
         reloadTimer = setTimeout(() => {

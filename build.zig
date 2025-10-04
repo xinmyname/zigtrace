@@ -9,9 +9,9 @@ pub fn build(b: *std.Build) void {
     });
 
     const exe = b.addExecutable(.{
-        .name = "checkerboard",
+        .name = "render",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/checkerboard.zig"),
+            .root_source_file = b.path("src/render.zig"),
             .target = target,
             .optimize = .ReleaseSmall,
         }),
@@ -48,8 +48,8 @@ pub fn build(b: *std.Build) void {
         }
 
         fn make(_: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void {
-            const src_path = "zig-out/bin/checkerboard.wasm"; // known output location
-            const dest_path = "public/checkerboard.wasm";
+            const src_path = "zig-out/bin/render.wasm"; // known output location
+            const dest_path = "public/render.wasm";
 
             // Ensure source exists; if not, silently return (build dependency should ensure it exists).
             var src_file = std.fs.cwd().openFile(src_path, .{}) catch return; // nothing to copy yet
