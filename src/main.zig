@@ -1,19 +1,8 @@
 const std = @import("std");
+const JS = @import("JS.zig");
+const Console = @import("Console.zig");
 
 pub const allocator = std.heap.wasm_allocator;
-
-const Imports = struct {
-    extern fn consoleLog(ptr: [*]const u8, len: usize) void;
-    extern fn renderLine(line: u32, ptr: [*]const u8, len: usize) void;
-};
-
-pub const Console = struct {
-    pub fn log(comptime format: []const u8, args: anytype) void {
-        var buf: [512]u8 = undefined; // adjust size if needed
-        const msg = std.fmt.bufPrint(&buf, format, args) catch return;
-        Imports.consoleLog(msg.ptr, msg.len);
-    }
-};
 
 extern var __heap_base: u8;
 
@@ -48,6 +37,6 @@ export fn render(width: u32, height: u32) void {
             line_slice[offset + 2] = b;
             line_slice[offset + 3] = 255;
         }
-        Imports.renderLine(line, line_slice.ptr, line_slice.len);
+        JS.renderLine(line, line_slice.ptr, line_slice.len);
     }
 }

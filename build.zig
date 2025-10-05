@@ -6,13 +6,15 @@ pub fn build(b: *std.Build) void {
         .os_tag = .freestanding,
     });
 
+    const root_mod = b.createModule(.{
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = .ReleaseSmall,
+    });
+
     const exe = b.addExecutable(.{
-        .name = "render",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/render.zig"),
-            .target = target,
-            .optimize = .ReleaseSmall,
-        }),
+        .name = "main",
+        .root_module = root_mod,
     });
 
     exe.entry = .disabled;
@@ -41,8 +43,8 @@ pub fn build(b: *std.Build) void {
         }
 
         fn make(_: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void {
-            const src_path = "zig-out/bin/render.wasm"; // known output location
-            const dest_path = "public/render.wasm";
+            const src_path = "zig-out/bin/main.wasm"; // known output location
+            const dest_path = "public/main.wasm";
 
             // Ensure source exists; if not, silently return (build dependency should ensure it exists).
             var src_file = std.fs.cwd().openFile(src_path, .{}) catch return; // nothing to copy yet
