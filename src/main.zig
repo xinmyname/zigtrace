@@ -16,16 +16,6 @@ pub export fn wasm_debug_info() void {
 }
 
 export fn render(width: u32, height: u32) void {
-    var v1 = Vec3.init(1.0, 2.0, 3.0).inverse();
-    // var v2 = Vec3.init(4.0, 5.0, 6.0);
-
-    // _ = v1.add(0.1, 0.2, 0.3)
-    //     .add(10.0, 20.0, 30.0);
-    // _ = v2.add(0.4, 0.5, 0.6);
-
-    Console.log("v1: x={} y={} z={}", .{ v1.x(), v1.y(), v1.z() });
-    // Console.log("v2 after add: x={} y={} z={}", .{ v2.x, v2.y, v2.z });
-
     Console.log("Rendering {} x {} ...", .{ width, height });
 
     const line_bytes = @as(usize, width) * 4;
