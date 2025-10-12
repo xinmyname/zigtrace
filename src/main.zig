@@ -65,19 +65,32 @@ export fn render(image_width: u32, image_height: u32) void {
 
             const ray_direction = pixel_center.subtractVector(camera_center);
             const r = Ray.init(camera_center, ray_direction);
-            const pixel_color = rayColor(r);
+            const pixel_color = rayColor(r).rgbBytes();
 
             const offset = i * 4;
-            line_slice[offset + 0] = pixel_color.rByte();
-            line_slice[offset + 1] = pixel_color.gByte();
-            line_slice[offset + 2] = pixel_color.bByte();
+            line_slice[offset + 0] = pixel_color[0];
+            line_slice[offset + 1] = pixel_color[1];
+            line_slice[offset + 2] = pixel_color[2];
             line_slice[offset + 3] = 255;
         }
         JS.renderLine(j, line_slice.ptr, line_slice.len);
     }
 }
 
+fn hitSphere(center: Vec3, radius: f64, r: Ray) bool {
+    const oc = center.subtractVector(r.orig);
+    const a = Vec3.dot(r.dir, r.dir);
+    const b = -2.0 * Vec3.dot(r.dir, oc);
+    const c = Vec3.dot(oc, oc) - radius * radius;
+    const discriminant = b * b - 4.0 * a * c;
+    return discriminant >= 0;
+}
+
 fn rayColor(r: Ray) Color {
+    if (hitSphere(Point3.init(0.0, 0.0, -1.0), 0.5, r)) {
+        return Color.init(1.0, 0.0, 0.0);
+    }
+
     const unit_direction = Vec3.unitVector(r.dir);
     const a = 0.5 * (unit_direction.y() + 1.0);
     return Color.init(1.0, 1.0, 1.0).multiplyByScalar(1.0 - a).addVector(Color.init(0.5, 0.7, 1.0).multiplyByScalar(a));

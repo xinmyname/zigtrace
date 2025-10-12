@@ -44,6 +44,21 @@ pub fn bByte(self: Vec3) u8 {
     return @intFromFloat(@min(@max(self.e[2], 0.0), 1.0) * 255.0);
 }
 
+pub fn rgbBytes(self: Vec3) [3]u8 {
+    const zeros: @Vector(3, f64) = .{ 0.0, 0.0, 0.0 };
+    const ones: @Vector(3, f64) = .{ 1.0, 1.0, 1.0 };
+    const scale: @Vector(3, f64) = .{ 255.0, 255.0, 255.0 };
+
+    const clamped = @max(zeros, @min(ones, self.e));
+    const scaled = clamped * scale;
+
+    return .{
+        @intFromFloat(scaled[0]),
+        @intFromFloat(scaled[1]),
+        @intFromFloat(scaled[2]),
+    };
+}
+
 pub fn inverse(self: Vec3) Vec3 {
     return Vec3{
         .e = .{ -self.e[0], -self.e[1], -self.e[2] },
@@ -78,6 +93,10 @@ pub fn lengthSquared(self: Vec3) f64 {
 
 pub fn length(self: Vec3) f64 {
     return @sqrt(self.lengthSquared());
+}
+
+pub fn dot(u: Vec3, v: Vec3) f64 {
+    return u.e[0] * v.e[0] + u.e[1] * v.e[1] + u.e[2] * v.e[2];
 }
 
 pub fn unitVector(v: Vec3) Vec3 {
@@ -115,27 +134,43 @@ test "rgb" {
 test "rgbBytes" {
     const std = @import("std");
     var v = Vec3.init(0.75, 0.15, 1.0);
-    try std.testing.expectEqual(191, v.rByte());
-    try std.testing.expectEqual(38, v.gByte());
-    try std.testing.expectEqual(255, v.bByte());
+    const bytes1 = v.rgbBytes();
+    try std.testing.expectEqual(191, bytes1[0]);
+    try std.testing.expectEqual(38, bytes1[1]);
+    try std.testing.expectEqual(255, bytes1[2]);
+
     v.e[0] = 1.0;
     v.e[1] = 0.75;
     v.e[2] = 0.25;
-    try std.testing.expectEqual(255, v.rByte());
-    try std.testing.expectEqual(191, v.gByte());
-    try std.testing.expectEqual(63, v.bByte());
+    const bytes2 = v.rgbBytes();
+    try std.testing.expectEqual(255, bytes2[0]);
+    try std.testing.expectEqual(191, bytes2[1]);
+    try std.testing.expectEqual(63, bytes2[2]);
+
     v.e[0] = 2.0;
     v.e[1] = 30.0;
     v.e[2] = 400.0;
-    try std.testing.expectEqual(255, v.rByte());
-    try std.testing.expectEqual(255, v.gByte());
-    try std.testing.expectEqual(255, v.bByte());
+    const bytes3 = v.rgbBytes();
+    try std.testing.expectEqual(255, bytes3[0]);
+    try std.testing.expectEqual(255, bytes3[1]);
+    try std.testing.expectEqual(255, bytes3[2]);
+
     v.e[0] = -1.1;
     v.e[1] = -2.2;
     v.e[2] = -3.3;
-    try std.testing.expectEqual(0, v.rByte());
-    try std.testing.expectEqual(0, v.gByte());
-    try std.testing.expectEqual(0, v.bByte());
+    const bytes4 = v.rgbBytes();
+    try std.testing.expectEqual(0, bytes4[0]);
+    try std.testing.expectEqual(0, bytes4[1]);
+    try std.testing.expectEqual(0, bytes4[2]);
+}
+
+test "allRGBBytes" {
+    const std = @import("std");
+    var v = Vec3.init(-1.5, 0.5, 1.5);
+    const bytes = v.rgbBytes();
+    try std.testing.expectEqual(0, bytes[0]);
+    try std.testing.expectEqual(127, bytes[1]);
+    try std.testing.expectEqual(255, bytes[2]);
 }
 
 test "inverse" {
@@ -197,6 +232,14 @@ test "length" {
     try std.testing.expectEqual(3.0, v.length());
 }
 
+test "dot" {
+    const std = @import("std");
+    const u = Vec3.init(1.0, 2.0, 3.0);
+    const v = Vec3.init(4.0, 5.0, 6.0);
+    const result = Vec3.dot(u, v);
+    try std.testing.expectEqual(32.0, result);
+}
+
 test "unitVector" {
     const std = @import("std");
     const v = Vec3.init(1.0, 2.0, 2.0);
@@ -205,5 +248,3 @@ test "unitVector" {
     try std.testing.expectEqual(2.0 / 3.0, unit.e[1]);
     try std.testing.expectEqual(2.0 / 3.0, unit.e[2]);
 }
-
-// Tests for rByte(), gByte(), bByte()
