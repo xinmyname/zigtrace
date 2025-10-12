@@ -53,8 +53,6 @@ export fn render(image_width: u32, image_height: u32) void {
     const pixel00_loc = viewport_upper_left
         .addVector(pixel_delta_u.addVector(pixel_delta_v).multiplyByScalar(0.5));
 
-    Console.log("FL: {} CC: {} PDU: {} PDV: {} VUL: {} P00L {}", .{ focal_length, camera_center, pixel_delta_u, pixel_delta_v, viewport_upper_left, pixel00_loc });
-
     for (0..image_height) |j| {
         const line_slice = line_buf[0..line_bytes];
         // Iterate per pixel (not per byte) to avoid incorrect gradient & compile error.
@@ -77,18 +75,25 @@ export fn render(image_width: u32, image_height: u32) void {
     }
 }
 
-fn hitSphere(center: Vec3, radius: f64, r: Ray) bool {
+fn hitSphere(center: Vec3, radius: f64, r: Ray) f64 {
     const oc = center.subtractVector(r.orig);
-    const a = Vec3.dot(r.dir, r.dir);
-    const b = -2.0 * Vec3.dot(r.dir, oc);
-    const c = Vec3.dot(oc, oc) - radius * radius;
-    const discriminant = b * b - 4.0 * a * c;
-    return discriminant >= 0;
+    const a = r.dir.lengthSquared();
+    const h = Vec3.dot(r.dir, oc);
+    const c = oc.lengthSquared() - radius * radius;
+    const discriminant = h * h - a * c;
+
+    if (discriminant < 0) {
+        return -1.0;
+    } else {
+        return (h - std.math.sqrt(discriminant)) / a;
+    }
 }
 
 fn rayColor(r: Ray) Color {
-    if (hitSphere(Point3.init(0.0, 0.0, -1.0), 0.5, r)) {
-        return Color.init(1.0, 0.0, 0.0);
+    const t = hitSphere(Point3.init(0.0, 0.0, -1.0), 0.5, r);
+    if (t > 0.0) {
+        const N = Vec3.unitVector(r.at(t).subtractVector(Vec3.init(0.0, 0.0, -1.0)));
+        return Color.init(N.x() + 1.0, N.y() + 1.0, N.z() + 1.0).multiplyByScalar(0.5);
     }
 
     const unit_direction = Vec3.unitVector(r.dir);

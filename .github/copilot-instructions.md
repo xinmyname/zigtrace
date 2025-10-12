@@ -70,6 +70,9 @@ This ensures output appears in browser devtools, not stderr.
 - Zig modules use PascalCase filenames: `Vec3.zig`, `Console.zig`, `JS.zig`
 - Import with `@import("ModuleName.zig")` - exact filename match required
 - Use `@This()` pattern for defining structs in their own files (see `Vec3.zig`, `Console.zig`)
+- Functions should be named using camel case, e.g.: `findFirst()`, `renderLine()`
+- Types and structs use title case, e.g.: `Vec3`, `HitRecord`
+- Variables and parameters use snake case, e.g.: `line_buf`, `image_height`
 
 ## Testing
 Run Zig unit tests (e.g., in `Vec3.zig`):
