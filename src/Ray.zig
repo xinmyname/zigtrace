@@ -14,7 +14,7 @@ pub fn init(origin: Point3, direction: Vec3) Ray {
 }
 
 pub fn at(self: Ray, t: f64) Point3 {
-    return Point3.add(self.orig, Vec3.scale(self.dir, t));
+    return self.orig.addVector(self.dir.multiplyByScalar(t));
 }
 
 test "at" {
