@@ -5,6 +5,11 @@ const Vec3 = @import("Vec3.zig");
 const Point3 = Vec3;
 const Color = Vec3;
 const Ray = @import("Ray.zig");
+const Objects = @import("Objects.zig");
+const HitRecord = @import("HitRecord.zig");
+
+const Object = Objects.Object;
+const ObjectList = Objects.ObjectList;
 
 pub const allocator = std.heap.wasm_allocator;
 
@@ -29,6 +34,23 @@ export fn render(image_width: u32, image_height: u32) void {
     };
 
     defer allocator.free(line_buf);
+
+    // World
+    var world = ObjectList{};
+    defer world.deinit(allocator);
+
+    const sphere1 = Object.sphere(Point3.init(0.0, 0.0, -1.0), 0.5);
+    const sphere2 = Object.sphere(Point3.init(0.0, -100.5, -1.0), 100.0);
+
+    world.append(allocator, sphere1) catch |err| {
+        Console.log("Failed to append sphere1: {}", .{err});
+        return;
+    };
+
+    world.append(allocator, sphere2) catch |err| {
+        Console.log("Failed to append sphere2: {}", .{err});
+        return;
+    };
 
     // Camera
     const focal_length: f64 = 1.0;
@@ -63,7 +85,7 @@ export fn render(image_width: u32, image_height: u32) void {
 
             const ray_direction = pixel_center.subtractVector(camera_center);
             const r = Ray.init(camera_center, ray_direction);
-            const pixel_color = rayColor(r).rgbBytes();
+            const pixel_color = rayColor(r, &world).rgbBytes();
 
             const offset = i * 4;
             line_slice[offset + 0] = pixel_color[0];
@@ -75,25 +97,11 @@ export fn render(image_width: u32, image_height: u32) void {
     }
 }
 
-fn hitSphere(center: Vec3, radius: f64, r: Ray) f64 {
-    const oc = center.subtractVector(r.orig);
-    const a = r.dir.lengthSquared();
-    const h = Vec3.dot(r.dir, oc);
-    const c = oc.lengthSquared() - radius * radius;
-    const discriminant = h * h - a * c;
+fn rayColor(r: Ray, world: *ObjectList) Color {
+    var rec: HitRecord = undefined;
 
-    if (discriminant < 0) {
-        return -1.0;
-    } else {
-        return (h - std.math.sqrt(discriminant)) / a;
-    }
-}
-
-fn rayColor(r: Ray) Color {
-    const t = hitSphere(Point3.init(0.0, 0.0, -1.0), 0.5, r);
-    if (t > 0.0) {
-        const N = Vec3.unitVector(r.at(t).subtractVector(Vec3.init(0.0, 0.0, -1.0)));
-        return Color.init(N.x() + 1.0, N.y() + 1.0, N.z() + 1.0).multiplyByScalar(0.5);
+    if (world.hit(r, 0, std.math.inf(f64), &rec)) {
+        return rec.normal.addVector(Color.init(1, 1, 1)).multiplyByScalar(0.5);
     }
 
     const unit_direction = Vec3.unitVector(r.dir);
