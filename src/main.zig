@@ -7,6 +7,7 @@ const Color = Vec3;
 const Ray = @import("Ray.zig");
 const Objects = @import("Objects.zig");
 const HitRecord = @import("HitRecord.zig");
+const Interval = @import("Interval.zig");
 
 const Object = Objects.Object;
 const ObjectList = Objects.ObjectList;
@@ -100,7 +101,7 @@ export fn render(image_width: u32, image_height: u32) void {
 fn rayColor(r: Ray, world: *ObjectList) Color {
     var rec: HitRecord = undefined;
 
-    if (world.hit(r, 0, std.math.inf(f64), &rec)) {
+    if (world.hit(r, Interval.init(0, std.math.inf(f64)), &rec)) {
         return rec.normal.addVector(Color.init(1, 1, 1)).multiplyByScalar(0.5);
     }
 

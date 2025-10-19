@@ -3,6 +3,7 @@ const Vec3 = @import("Vec3.zig");
 const Point3 = Vec3;
 const Ray = @import("Ray.zig");
 const HitRecord = @import("HitRecord.zig");
+const Interval = @import("Interval.zig");
 
 pub const Sphere = struct {
     center: Point3 = undefined,
@@ -15,7 +16,7 @@ pub const Sphere = struct {
         };
     }
 
-    pub fn hit(self: Sphere, r: Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
+    pub fn hit(self: Sphere, r: Ray, ray_t: Interval, rec: *HitRecord) bool {
         const oc = self.center.subtractVector(r.orig);
         const a = r.dir.lengthSquared();
         const h = Vec3.dot(r.dir, oc);
@@ -28,9 +29,9 @@ pub const Sphere = struct {
         const sqrt_d = std.math.sqrt(discriminant);
         var root = (h - sqrt_d) / a;
 
-        if (root <= ray_tmin or ray_tmax <= root) {
+        if (!ray_t.surrounds(root)) {
             root = (h + sqrt_d) / a;
-            if (root <= ray_tmin or ray_tmax <= root)
+            if (!ray_t.surrounds(root))
                 return false;
         }
 
@@ -54,13 +55,13 @@ pub const ObjectList = struct {
         try self.objects.append(allocator, object);
     }
 
-    pub fn hit(self: ObjectList, r: Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
+    pub fn hit(self: ObjectList, r: Ray, ray_t: Interval, rec: *HitRecord) bool {
         var temp_rec: HitRecord = undefined;
         var hit_anything = false;
-        var closest_so_far = ray_tmax;
+        var closest_so_far = ray_t.max;
 
         for (self.objects.items) |obj| {
-            if (obj.hit(r, ray_tmin, closest_so_far, &temp_rec)) {
+            if (obj.hit(r, Interval.init(ray_t.min, closest_so_far), &temp_rec)) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
                 rec.* = temp_rec;
@@ -83,10 +84,10 @@ pub const Object = union(enum) {
         return Object{ .ObjectList = ObjectList{} };
     }
 
-    pub fn hit(self: Object, r: Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
+    pub fn hit(self: Object, r: Ray, ray_t: Interval, rec: *HitRecord) bool {
         return switch (self) {
-            .Sphere => self.Sphere.hit(r, ray_tmin, ray_tmax, rec),
-            .ObjectList => self.ObjectList.hit(r, ray_tmin, ray_tmax, rec),
+            .Sphere => self.Sphere.hit(r, ray_t, rec),
+            .ObjectList => self.ObjectList.hit(r, ray_t, rec),
         };
     }
 };
@@ -96,7 +97,7 @@ test "ray hits sphere" {
     const r = Ray.init(Point3.init(0.0, 0.0, 0.0), Vec3.init(0.0, 0.0, -1.0));
     var rec: HitRecord = undefined;
 
-    const did_hit = s.hit(r, 0.0, 100.0, &rec);
+    const did_hit = s.hit(r, Interval.init(0.0, 100.0), &rec);
     try std.testing.expect(did_hit);
     try std.testing.expect(rec.t == 0.5); // The ray has travelled 0.5 units to hit the sphere.
     try std.testing.expect(rec.p.e[0] == 0.0);
@@ -112,7 +113,7 @@ test "ray misses sphere" {
     const r = Ray.init(Point3.init(0.0, 0.0, 0.0), Vec3.init(0.0, 0.0, 1.0));
     var rec: HitRecord = undefined;
 
-    const did_hit = s.hit(r, 0.0, 100.0, &rec);
+    const did_hit = s.hit(r, Interval.init(0.0, 100.0), &rec);
     try std.testing.expect(!did_hit);
 }
 
@@ -121,7 +122,7 @@ test "ray inside sphere" {
     const r = Ray.init(Point3.init(0.0, 0.0, 0.0), Vec3.init(0.0, 0.0, -1.0));
     var rec: HitRecord = undefined;
 
-    const did_hit = s.hit(r, 0.0, 100.0, &rec);
+    const did_hit = s.hit(r, Interval.init(0.0, 100.0), &rec);
     try std.testing.expect(did_hit);
     try std.testing.expect(rec.t == 0.5); // The ray has travelled 0.5 units to hit the sphere.
     try std.testing.expect(rec.p.e[0] == 0.0);
@@ -154,7 +155,7 @@ test "two spheres in hittable list" {
     const r = Ray.init(Point3.init(0.0, 0.0, 0.0), Vec3.init(0.0, 0.0, -1.0));
     var rec: HitRecord = undefined;
 
-    const did_hit = list.hit(r, 0.0, 100.0, &rec);
+    const did_hit = list.hit(r, Interval.init(0.0, 100.0), &rec);
     try std.testing.expect(did_hit);
     try std.testing.expect(rec.t == 0.5); // The ray hits the smaller sphere first.
 }
