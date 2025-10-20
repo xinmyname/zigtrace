@@ -19,24 +19,43 @@ image_width: u32, // Rendered image width
 image_height: u32, // Rendered image height
 
 center: Point3, // Camera center
-pixel00_loc: Point3, // Location of pixel 0, 0
 pixel_delta_u: Vec3, // Offset to pixel to the right
 pixel_delta_v: Vec3, // Offset to pixel below
+pixel00_loc: Point3, // Location of pixel 0, 0
 
 pub fn init(image_width: u32, image_height: u32) Camera {
+    const center = Point3.init(0.0, 0.0, 0.0);
+
+    // Determine viewport dimensions.
+    const focal_length: f64 = 1.0;
+    const viewport_height: f64 = 2.0;
+    const viewport_width: f64 = viewport_height * (@as(f64, @floatFromInt(image_width)) / @as(f64, @floatFromInt(image_height)));
+
+    // Calculate the vectors across the horizontal and down the vertical viewport edges.
+    const viewport_u = Vec3.init(viewport_width, 0.0, 0.0);
+    const viewport_v = Vec3.init(0.0, -viewport_height, 0.0);
+
+    // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+    const pixel_delta_u = viewport_u.divideByScalar(@as(f64, @floatFromInt(image_width)));
+    const pixel_delta_v = viewport_v.divideByScalar(@as(f64, @floatFromInt(image_height)));
+
+    // Calculate the location of the upper left pixel.
+    const viewport_upper_left = center
+        .subtractVector(Vec3.init(0.0, 0.0, focal_length))
+        .subtractVector(viewport_u.divideByScalar(2.0))
+        .subtractVector(viewport_v.divideByScalar(2.0));
+
     return Camera{
         .image_width = image_width,
         .image_height = image_height,
-        .center = undefined,
-        .pixel00_loc = undefined,
-        .pixel_delta_u = undefined,
-        .pixel_delta_v = undefined,
+        .center = center,
+        .pixel_delta_u = pixel_delta_u,
+        .pixel_delta_v = pixel_delta_v,
+        .pixel00_loc = viewport_upper_left.addVector(pixel_delta_u.addVector(pixel_delta_v).multiplyByScalar(0.5)),
     };
 }
 
-pub fn render(self: *Camera, allocator: std.mem.Allocator, world: *const ObjectList) void {
-    self.prepare();
-
+pub fn render(self: Camera, allocator: std.mem.Allocator, world: *const ObjectList) void {
     const line_bytes = @as(usize, self.image_width) * 4;
 
     var line_buf = allocator.alloc(u8, line_bytes) catch {
@@ -66,32 +85,6 @@ pub fn render(self: *Camera, allocator: std.mem.Allocator, world: *const ObjectL
         }
         JS.renderLine(j, line_slice.ptr, line_slice.len);
     }
-}
-
-fn prepare(self: *Camera) void {
-    self.center = Point3.init(0.0, 0.0, 0.0);
-
-    // Determine viewport dimensions.
-    const focal_length: f64 = 1.0;
-    const viewport_height: f64 = 2.0;
-    const viewport_width: f64 = viewport_height * (@as(f64, @floatFromInt(self.image_width)) / @as(f64, @floatFromInt(self.image_height)));
-
-    // Calculate the vectors across the horizontal and down the vertical viewport edges.
-    const viewport_u = Vec3.init(viewport_width, 0.0, 0.0);
-    const viewport_v = Vec3.init(0.0, -viewport_height, 0.0);
-
-    // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-    self.pixel_delta_u = viewport_u.divideByScalar(@as(f64, @floatFromInt(self.image_width)));
-    self.pixel_delta_v = viewport_v.divideByScalar(@as(f64, @floatFromInt(self.image_height)));
-
-    // Calculate the location of the upper left pixel.
-    const viewport_upper_left = self.center
-        .subtractVector(Vec3.init(0.0, 0.0, focal_length))
-        .subtractVector(viewport_u.divideByScalar(2.0))
-        .subtractVector(viewport_v.divideByScalar(2.0));
-
-    self.pixel00_loc = viewport_upper_left
-        .addVector(self.pixel_delta_u.addVector(self.pixel_delta_v).multiplyByScalar(0.5));
 }
 
 fn rayColor(r: Ray, world: *const ObjectList) Color {

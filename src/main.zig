@@ -46,6 +46,6 @@ export fn render(image_width: u32, image_height: u32) void {
         return;
     };
 
-    var cam = Camera.init(image_width, image_height);
+    const cam = Camera.init(image_width, image_height);
     cam.render(allocator, &world);
 }
