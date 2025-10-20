@@ -1,4 +1,5 @@
 const Vec3 = @import("Vec3.zig");
+
 const Point3 = Vec3;
 
 const Ray = @This();

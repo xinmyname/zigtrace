@@ -1,9 +1,11 @@
 const std = @import("std");
-const Vec3 = @import("Vec3.zig");
-const Point3 = Vec3;
-const Ray = @import("Ray.zig");
+
 const HitRecord = @import("HitRecord.zig");
 const Interval = @import("Interval.zig");
+const Ray = @import("Ray.zig");
+const Vec3 = @import("Vec3.zig");
+
+const Point3 = Vec3;
 
 pub const Sphere = struct {
     center: Point3 = undefined,

@@ -1,4 +1,5 @@
 const std = @import("std");
+
 const JS = @import("JS.zig");
 
 const Console = @This();
